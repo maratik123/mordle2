@@ -6,6 +6,7 @@ pub mod dict;
 pub mod dict_loader;
 pub mod grapheme_rule;
 pub mod index;
+pub mod rules;
 pub mod rules_applier;
 pub mod stats;
 

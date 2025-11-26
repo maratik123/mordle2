@@ -17,7 +17,7 @@ use std::fmt::{Debug, Formatter};
 struct BestChoice<'s: 'd, 'd> {
     count: usize,
     variance: Option<f64>,
-    words: Vec<&'d Vec<&'s str>>,
+    words: Vec<&'d [&'s str]>,
 }
 
 impl Debug for BestChoice<'_, '_> {
@@ -31,7 +31,7 @@ impl Debug for BestChoice<'_, '_> {
 }
 
 struct DebugWords<'a, 'd, 's> {
-    words: &'a Vec<&'d Vec<&'s str>>,
+    words: &'a [&'d [&'s str]],
 }
 
 impl Debug for DebugWords<'_, '_, '_> {
@@ -47,7 +47,7 @@ pub fn best_choice<'s, 'd>(
     rng: &mut ThreadRng,
     dict: &'d Dict<'s>,
     mask: &RoaringBitmap,
-) -> Result<Option<&'d Vec<&'s str>>, BitmapIterError> {
+) -> Result<Option<&'d [&'s str]>, BitmapIterError> {
     info!("Will check {len} words", len = mask.len());
 
     let mut best_choice: Option<BestChoice> = None;

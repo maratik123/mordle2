@@ -55,7 +55,7 @@ impl<'s, 'd, 'b> BitmapIter<'s, 'd, 'b> {
 }
 
 impl<'s, 'd> Iterator for BitmapIter<'s, 'd, '_> {
-    type Item = &'d Vec<&'s str>;
+    type Item = &'d [&'s str];
 
     fn next(&mut self) -> Option<Self::Item> {
         Some(&self.dict.words()[self.bitmap_iter.next()? as usize])
@@ -75,7 +75,7 @@ impl<'s, 'd> Iterator for BitmapIter<'s, 'd, '_> {
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
         self.bitmap_iter
             .nth(n)
-            .map(|word_id| &self.dict.words()[word_id as usize])
+            .map(|word_id| self.dict.words()[word_id as usize].as_ref())
     }
 
     fn fold<B, F>(self, init: B, mut f: F) -> B
@@ -97,7 +97,7 @@ impl DoubleEndedIterator for BitmapIter<'_, '_, '_> {
     fn nth_back(&mut self, n: usize) -> Option<Self::Item> {
         self.bitmap_iter
             .nth_back(n)
-            .map(|word_id| &self.dict.words()[word_id as usize])
+            .map(|word_id| self.dict.words()[word_id as usize].as_ref())
     }
 
     fn rfold<B, F>(self, init: B, mut f: F) -> B
@@ -132,26 +132,25 @@ mod tests {
 
     #[test]
     fn test_bitmap_iter() {
-        let dict =
-            Dict::try_from_iter(["world", "hello"].map(|w| Vec::from_iter(w.graphemes(true))))
-                .unwrap();
+        let dict = Dict::try_from_iter(
+            ["world", "hello"].map(|w| Vec::from_iter(w.graphemes(true)).into_boxed_slice()),
+        )
+        .unwrap();
         let bitmap = RoaringBitmap::from([0, 1]);
         assert_equal(
             BitmapIter::try_from_dict(&dict, &bitmap).unwrap(),
-            [
-                &vec!["h", "e", "l", "l", "o"],
-                &vec!["w", "o", "r", "l", "d"],
-            ],
+            [["h", "e", "l", "l", "o"], ["w", "o", "r", "l", "d"]],
         );
     }
 
     #[test]
     fn test_empty_bitmap_iter() {
-        let dict =
-            Dict::try_from_iter(["world", "hello"].map(|w| Vec::from_iter(w.graphemes(true))))
-                .unwrap();
+        let dict = Dict::try_from_iter(
+            ["world", "hello"].map(|w| Vec::from_iter(w.graphemes(true)).into_boxed_slice()),
+        )
+        .unwrap();
         let bitmap = RoaringBitmap::new();
-        assert_equal::<_, [&Vec<&str>; _]>(
+        assert_equal::<_, [&[&str]; _]>(
             BitmapIter::try_from_dict(&dict, &bitmap).unwrap().next(),
             [],
         );
@@ -159,9 +158,10 @@ mod tests {
 
     #[test]
     fn test_invalid_bitmap() {
-        let dict =
-            Dict::try_from_iter(["world", "hello"].map(|w| Vec::from_iter(w.graphemes(true))))
-                .unwrap();
+        let dict = Dict::try_from_iter(
+            ["world", "hello"].map(|w| Vec::from_iter(w.graphemes(true)).into_boxed_slice()),
+        )
+        .unwrap();
         let bitmap = RoaringBitmap::from([2]);
         assert_eq!(
             BitmapIter::try_from_dict(&dict, &bitmap).unwrap_err(),
@@ -175,16 +175,14 @@ mod tests {
     #[test]
     fn test_bitmap_on_dict_with_duplicates() {
         let dict = Dict::try_from_iter(
-            ["world", "hello", "hello", "world"].map(|w| Vec::from_iter(w.graphemes(true))),
+            ["world", "hello", "hello", "world"]
+                .map(|w| Vec::from_iter(w.graphemes(true)).into_boxed_slice()),
         )
         .unwrap();
         let bitmap = RoaringBitmap::from([0, 1]);
         assert_equal(
             BitmapIter::try_from_dict(&dict, &bitmap).unwrap(),
-            [
-                &vec!["h", "e", "l", "l", "o"],
-                &vec!["w", "o", "r", "l", "d"],
-            ],
+            [["h", "e", "l", "l", "o"], ["w", "o", "r", "l", "d"]],
         );
     }
 }

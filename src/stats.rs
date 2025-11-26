@@ -36,12 +36,13 @@ mod tests {
 
     #[test]
     fn test_kahan_babushka() {
-        assert_eq!(kahan_babushka_neumaier_sum(vec![1.0, 2.0, 3.0]), 6.0);
+        assert_eq!(kahan_babushka_neumaier_sum([1.0, 2.0, 3.0]), 6.0);
     }
 
     #[test]
     fn test_kahan_babushka_large() {
-        assert_eq!([1e100, 1.0, -1e100].iter().sum::<f64>(), 0.0);
-        assert_eq!(kahan_babushka_neumaier_sum(vec![1e100, 1.0, -1e100]), 1.0);
+        let input = [1.0, 1e100, 1.0, -1e100];
+        assert_eq!(input.iter().sum::<f64>(), 0.0);
+        assert_eq!(kahan_babushka_neumaier_sum(input), 2.0);
     }
 }

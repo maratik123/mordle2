@@ -83,18 +83,20 @@ mod tests {
 
     #[test]
     fn test_check_word_exact() {
-        let dict =
-            Dict::try_from_iter(["hello", "world"].map(|w| Vec::from_iter(w.graphemes(true))))
-                .unwrap();
+        let dict = Dict::try_from_iter(
+            ["hello", "world"].map(|w| Vec::from_iter(w.graphemes(true)).into_boxed_slice()),
+        )
+        .unwrap();
         let expected = vec![CheckResult::ExactPlace; dict.word_len()];
         assert_check_word(dict, 0, 0, &expected);
     }
 
     #[test]
     fn test_check_word_partial0() {
-        let dict =
-            Dict::try_from_iter(["hello", "world"].map(|w| Vec::from_iter(w.graphemes(true))))
-                .unwrap();
+        let dict = Dict::try_from_iter(
+            ["hello", "world"].map(|w| Vec::from_iter(w.graphemes(true)).into_boxed_slice()),
+        )
+        .unwrap();
         assert_check_word(
             dict,
             1,
@@ -111,9 +113,10 @@ mod tests {
 
     #[test]
     fn test_check_word_partial1() {
-        let dict =
-            Dict::try_from_iter(["hello", "world"].map(|w| Vec::from_iter(w.graphemes(true))))
-                .unwrap();
+        let dict = Dict::try_from_iter(
+            ["hello", "world"].map(|w| Vec::from_iter(w.graphemes(true)).into_boxed_slice()),
+        )
+        .unwrap();
         assert_check_word(
             dict,
             0,
@@ -131,7 +134,8 @@ mod tests {
     #[test]
     fn test_check_word_long_partial0() {
         let dict = Dict::try_from_iter(
-            ["abcdefghjjk", "jjjnopqrstk"].map(|w| Vec::from_iter(w.graphemes(true))),
+            ["abcdefghjjk", "jjjnopqrstk"]
+                .map(|w| Vec::from_iter(w.graphemes(true)).into_boxed_slice()),
         )
         .unwrap();
         assert_check_word(
@@ -157,7 +161,8 @@ mod tests {
     #[test]
     fn test_check_word_long_partial1() {
         let dict = Dict::try_from_iter(
-            ["abcdefghjjk", "jjjnopqrstk"].map(|w| Vec::from_iter(w.graphemes(true))),
+            ["abcdefghjjk", "jjjnopqrstk"]
+                .map(|w| Vec::from_iter(w.graphemes(true)).into_boxed_slice()),
         )
         .unwrap();
         assert_check_word(

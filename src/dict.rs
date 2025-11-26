@@ -9,7 +9,7 @@ use std::iter;
 #[derive(Default, Debug, Eq, PartialEq)]
 pub struct Dict<'s> {
     word_len: usize,
-    words: Vec<Vec<&'s str>>,
+    words: Box<[Box<[&'s str]>]>,
 }
 
 #[derive(Debug, thiserror::Error, Eq, PartialEq)]
@@ -24,7 +24,9 @@ pub enum DictError {
 
 impl<'s> Dict<'s> {
     #[time("debug", "Dict::{}")]
-    pub fn try_from_iter(iter: impl IntoIterator<Item = Vec<&'s str>>) -> Result<Self, DictError> {
+    pub fn try_from_iter(
+        iter: impl IntoIterator<Item = Box<[&'s str]>>,
+    ) -> Result<Self, DictError> {
         let mut iter = iter.into_iter();
 
         Ok(if let Some(first) = iter.next() {
@@ -44,9 +46,11 @@ impl<'s> Dict<'s> {
 
             words.sort_unstable();
             words.dedup();
-            words.shrink_to_fit();
 
-            Self { word_len, words }
+            Self {
+                word_len,
+                words: words.into_boxed_slice(),
+            }
         } else {
             Default::default()
         })
@@ -56,7 +60,7 @@ impl<'s> Dict<'s> {
         self.word_len
     }
 
-    pub fn words(&self) -> &Vec<Vec<&'s str>> {
+    pub fn words(&self) -> &[Box<[&'s str]>] {
         &self.words
     }
 
@@ -68,8 +72,8 @@ impl<'s> Dict<'s> {
         self.words.is_empty()
     }
 
-    pub fn word_index(&self, word: &Vec<&str>) -> Option<usize> {
-        self.words.binary_search(word).ok()
+    pub fn word_index(&self, word: &[&str]) -> Option<usize> {
+        self.words.binary_search_by(|w| w.as_ref().cmp(word)).ok()
     }
 
     pub fn try_bitmap_iter<'b, 'd>(
@@ -83,7 +87,7 @@ impl<'s> Dict<'s> {
         &'d self,
         rng: &mut ThreadRng,
         mask: &RoaringBitmap,
-    ) -> Result<Option<&'d Vec<&'s str>>, BitmapIterError> {
+    ) -> Result<Option<&'d [&'s str]>, BitmapIterError> {
         best_choice(rng, self, mask)
     }
 }
@@ -96,14 +100,18 @@ mod tests {
     #[test]
     fn test_collect_from_iter() {
         let dict = Dict::try_from_iter(
-            ["world", "hello", "hello", "world"].map(|w| Vec::from_iter(w.graphemes(true))),
+            ["world", "hello", "hello", "world"]
+                .map(|w| Vec::from_iter(w.graphemes(true)).into_boxed_slice()),
         )
         .unwrap();
         assert_eq!(
             dict,
             Dict {
                 word_len: 5,
-                words: vec![vec!["h", "e", "l", "l", "o"], vec!["w", "o", "r", "l", "d"],]
+                words: Box::new([
+                    Box::new(["h", "e", "l", "l", "o"]),
+                    Box::new(["w", "o", "r", "l", "d"])
+                ])
             }
         );
     }
@@ -111,7 +119,8 @@ mod tests {
     #[test]
     fn test_collect_from_iter_zalgo() {
         let dict = Dict::try_from_iter(
-            ["h̛̞́͜e͉͛l̐ͅlȯ͉͔͖͝͞", "w̲̃o͖̜̅̍r̗̹̐̔l̝͊ď̘", "щ̲͋ё̢̭̍̅͜͝т̧̻̟͂̅̄к̣̘͉̀̇͝а̡̧̗̂̒̂", "щ̢̡̪̲͗͒̓̒ѐ̧̱̩̪̄̾̂̅͟т̰̇к̰̘̊̒а̱̰̟͔̊̆̕̚"].map(|w| Vec::from_iter(w.graphemes(true))),
+            ["h̛̞́͜e͉͛l̐ͅlȯ͉͔͖͝͞", "w̲̃o͖̜̅̍r̗̹̐̔l̝͊ď̘", "щ̲͋ё̢̭̍̅͜͝т̧̻̟͂̅̄к̣̘͉̀̇͝а̡̧̗̂̒̂", "щ̢̡̪̲͗͒̓̒ѐ̧̱̩̪̄̾̂̅͟т̰̇к̰̘̊̒а̱̰̟͔̊̆̕̚"]
+                .map(|w| Vec::from_iter(w.graphemes(true)).into_boxed_slice()),
         )
         .unwrap();
         assert_eq!(dict.word_len(), 5);
@@ -127,7 +136,9 @@ mod tests {
     #[test]
     fn test_word_len_mismatch() {
         assert_eq!(
-            Dict::try_from_iter(["hello", "word"].map(|w| Vec::from_iter(w.graphemes(true)))),
+            Dict::try_from_iter(
+                ["hello", "word"].map(|w| Vec::from_iter(w.graphemes(true)).into_boxed_slice())
+            ),
             Err(DictError::WordLenMismatch {
                 expected_word_len: 5,
                 actual_word_len: 4,
