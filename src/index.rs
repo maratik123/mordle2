@@ -80,29 +80,6 @@ impl<'d, 's> Index<'d, 's> {
         RoaringBitmap::new()
     }
 
-    pub fn get_by_grapheme_by_count(&self, grapheme: &str, count: usize) -> Option<&RoaringBitmap> {
-        self.get_entry_by_grapheme(grapheme)
-            .and_then(|entry| entry.counts(count))
-    }
-
-    pub fn get_by_grapheme_by_count_from(
-        &self,
-        grapheme: &str,
-        count_from: usize,
-    ) -> Option<&RoaringBitmap> {
-        self.get_entry_by_grapheme(grapheme)
-            .and_then(|entry| entry.counts_from(count_from))
-    }
-
-    pub fn get_by_grapheme_and_pos(
-        &self,
-        grapheme: &str,
-        grapheme_pos: usize,
-    ) -> Option<&RoaringBitmap> {
-        self.get_entry_by_grapheme(grapheme)
-            .and_then(|entry| entry.get_by_pos(grapheme_pos))
-    }
-
     pub fn get_entry_by_grapheme(&self, grapheme: &str) -> Option<&IndexEntry<'d, 's>> {
         self.bitmaps.get(grapheme)
     }
@@ -114,10 +91,15 @@ impl<'d, 's> Index<'d, 's> {
 
 #[derive(Debug, PartialEq, Default)]
 pub struct IndexEntry<'d, 's> {
-    counts: Box<[RoaringBitmap]>,
-    counts_from: Box<[RoaringBitmap]>,
-    by_pos: Box<[RoaringBitmap]>,
-    phantom: PhantomData<&'d Dict<'s>>,
+    by_pos: Box<[IndexEntryByPos<'d, 's>]>,
+}
+
+#[derive(Debug, PartialEq, Default)]
+pub struct IndexEntryByPos<'d, 's> {
+    counts: RoaringBitmap,
+    counts_from: RoaringBitmap,
+    by_pos: RoaringBitmap,
+    _phantom: PhantomData<&'d Dict<'s>>,
 }
 
 impl<'d, 's> IndexEntry<'d, 's> {
