@@ -21,9 +21,7 @@ pub enum DictLoaderError {
 #[time("info")]
 pub fn load(content: &'_ str) -> Result<Dict<'_>, DictLoaderError> {
     Ok(Dict::try_from_iter(content.unicode_words().map(|word| {
-        let mut word = Vec::from_iter(word.graphemes(true));
-        word.shrink_to_fit();
-        word
+        Vec::from_iter(word.graphemes(true)).into_boxed_slice()
     }))?)
 }
 

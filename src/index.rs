@@ -114,9 +114,9 @@ impl<'d, 's> Index<'d, 's> {
 
 #[derive(Debug, PartialEq, Default)]
 pub struct IndexEntry<'d, 's> {
-    counts: Vec<RoaringBitmap>,
-    counts_from: Vec<RoaringBitmap>,
-    by_pos: Vec<RoaringBitmap>,
+    counts: Box<[RoaringBitmap]>,
+    counts_from: Box<[RoaringBitmap]>,
+    by_pos: Box<[RoaringBitmap]>,
     phantom: PhantomData<&'d Dict<'s>>,
 }
 
@@ -135,9 +135,9 @@ impl<'d, 's> IndexEntry<'d, 's> {
 
     fn new(word_len: usize) -> Self {
         Self {
-            counts: vec![RoaringBitmap::new(); word_len],
-            counts_from: vec![RoaringBitmap::new(); word_len],
-            by_pos: vec![RoaringBitmap::new(); word_len],
+            counts: vec![RoaringBitmap::new(); word_len].into_boxed_slice(),
+            counts_from: vec![RoaringBitmap::new(); word_len].into_boxed_slice(),
+            by_pos: vec![RoaringBitmap::new(); word_len].into_boxed_slice(),
             phantom: Default::default(),
         }
     }
@@ -175,7 +175,6 @@ impl<'d, 's> IndexEntry<'d, 's> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::vec;
     use unicode_segmentation::UnicodeSegmentation;
 
     #[test]
@@ -193,9 +192,10 @@ mod tests {
 
     #[test]
     fn test_index_from_dict() {
-        let dict =
-            Dict::try_from_iter(["hello", "world"].map(|w| Vec::from_iter(w.graphemes(true))))
-                .unwrap();
+        let dict = Dict::try_from_iter(
+            ["hello", "world"].map(|w| Vec::from_iter(w.graphemes(true)).into_boxed_slice()),
+        )
+        .unwrap();
         let index = Index::from_dict(&dict);
         assert_eq!(
             index,
@@ -205,189 +205,189 @@ mod tests {
                     (
                         "h",
                         IndexEntry {
-                            counts: vec![
+                            counts: Box::new([
                                 RoaringBitmap::from([0]),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
-                            ],
-                            counts_from: vec![
+                            ]),
+                            counts_from: Box::new([
                                 RoaringBitmap::from([0]),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
-                            ],
-                            by_pos: vec![
+                            ]),
+                            by_pos: Box::new([
                                 RoaringBitmap::from([0]),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
-                            ],
+                            ]),
                             phantom: Default::default(),
                         }
                     ),
                     (
                         "e",
                         IndexEntry {
-                            counts: vec![
+                            counts: Box::new([
                                 RoaringBitmap::from([0]),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
-                            ],
-                            counts_from: vec![
+                            ]),
+                            counts_from: Box::new([
                                 RoaringBitmap::from([0]),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
-                            ],
-                            by_pos: vec![
+                            ]),
+                            by_pos: Box::new([
                                 RoaringBitmap::new(),
                                 RoaringBitmap::from([0]),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
-                            ],
+                            ]),
                             phantom: Default::default(),
                         }
                     ),
                     (
                         "l",
                         IndexEntry {
-                            counts: vec![
+                            counts: Box::new([
                                 RoaringBitmap::from([1]),
                                 RoaringBitmap::from([0]),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
-                            ],
-                            counts_from: vec![
+                            ]),
+                            counts_from: Box::new([
                                 RoaringBitmap::from([0, 1]),
                                 RoaringBitmap::from([0]),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
-                            ],
-                            by_pos: vec![
+                            ]),
+                            by_pos: Box::new([
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::from([0]),
                                 RoaringBitmap::from([0, 1]),
                                 RoaringBitmap::new(),
-                            ],
+                            ]),
                             phantom: Default::default(),
                         }
                     ),
                     (
                         "o",
                         IndexEntry {
-                            counts: vec![
+                            counts: Box::new([
                                 RoaringBitmap::from([0, 1]),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
-                            ],
-                            counts_from: vec![
+                            ]),
+                            counts_from: Box::new([
                                 RoaringBitmap::from([0, 1]),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
-                            ],
-                            by_pos: vec![
+                            ]),
+                            by_pos: Box::new([
                                 RoaringBitmap::new(),
                                 RoaringBitmap::from([1]),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::from([0]),
-                            ],
+                            ]),
                             phantom: Default::default(),
                         }
                     ),
                     (
                         "w",
                         IndexEntry {
-                            counts: vec![
+                            counts: Box::new([
                                 RoaringBitmap::from([1]),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
-                            ],
-                            counts_from: vec![
+                            ]),
+                            counts_from: Box::new([
                                 RoaringBitmap::from([1]),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
-                            ],
-                            by_pos: vec![
+                            ]),
+                            by_pos: Box::new([
                                 RoaringBitmap::from([1]),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
-                            ],
+                            ]),
                             phantom: Default::default(),
                         }
                     ),
                     (
                         "r",
                         IndexEntry {
-                            counts: vec![
+                            counts: Box::new([
                                 RoaringBitmap::from([1]),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
-                            ],
-                            counts_from: vec![
+                            ]),
+                            counts_from: Box::new([
                                 RoaringBitmap::from([1]),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
-                            ],
-                            by_pos: vec![
+                            ]),
+                            by_pos: Box::new([
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::from([1]),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
-                            ],
+                            ]),
                             phantom: Default::default(),
                         }
                     ),
                     (
                         "d",
                         IndexEntry {
-                            counts: vec![
+                            counts: Box::new([
                                 RoaringBitmap::from([1]),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
-                            ],
-                            counts_from: vec![
+                            ]),
+                            counts_from: Box::new([
                                 RoaringBitmap::from([1]),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
-                            ],
-                            by_pos: vec![
+                            ]),
+                            by_pos: Box::new([
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::new(),
                                 RoaringBitmap::from([1]),
-                            ],
+                            ]),
                             phantom: Default::default(),
                         }
                     ),
